@@ -1,0 +1,455 @@
+---
+title: "Assn2"
+author: "Shivam"
+output: pdf_document
+date: "2023-02-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#if(!is.null(dev.list())) dev.off()
+#cat("\014")
+#rm(list=ls())
+options(scipen=9)
+
+
+```
+
+
+```{r}
+if(!require(pastecs)){install.packages("pastecs")}
+library("pastecs")
+
+if(!require(lattice)){install.packages("lattice")}
+library("lattice")
+
+```
+#####################################################################################################
+
+1.Data Transformation and Preparation
+
+  1. Initial Transformation
+    a. Rename all variables with your initials appended 
+      
+```{r}
+setwd("C:/Users/holys/OneDrive/Desktop/Data Analytics,Mathamatics,Algor/Assign02")
+
+test_SJ <- read.table("PROG8430-23W-Assign02.txt", sep=",", header=TRUE)
+
+
+    test_SJ <- as.data.frame(test_SJ)
+    head(test_SJ)
+
+```
+```{r}
+ colnames(test_SJ) <- paste(colnames(test_SJ), "SJ", sep = "_")
+  head(test_SJ)
+
+```
+      
+      
+      
+      
+    b. Transform character variables to factor variables.
+    
+```{r}
+
+test_SJ$Manufacturer_SJ <- factor(test_SJ$Manufacturer_SJ)
+test_SJ$Server_SJ       <- factor(test_SJ$Server_SJ)
+
+```
+    
+    
+  2. Reduce Dimensionality
+  
+    a. Apply the Missing Value Filter to remove appropriate columns
+      of data.
+        
+```{r}
+summary(test_SJ)
+
+```
+    -> As we can see from the summary of the data set, there is no such record which is missing,
+       so there is no change or action to be taken after missing value filter.
+        
+        
+    b. Apply the Low Variance Filter to remove appropriate columns
+      of data.
+      
+```{r}
+stat.desc(test_SJ)  #Consider coef of var
+summary(test_SJ)
+```
+-> It is observed that the UC_SJ has a a negligible coefficient of variance value 
+  so we can eliminate it because it will not make a big difference in analyzing
+  and we reduce the dimensions for the ease to study it and make observations on it.
+
+```{r}
+
+test_SJ <- test_SJ[-c(11)]
+
+head(test_SJ,3)
+
+```
+
+
+      
+    c. Apply the High Correlation Filter to remove appropriate
+      columns of data.
+      
+```{r}
+
+test2_SJ <- test_SJ[-c(2:3)]
+    head(test2_SJ)
+    
+
+cor(test2_SJ,method="spearman")
+
+
+```
+-> It is clearly observed that the correlation of SMBR_SJ and SMBT_SJ is very high with
+  BR_SJ and  BT_SJ respectively,so we can eliminate two column maintaining their relativity 
+  in the data set. 
+
+
+```{r}
+test_SJ <- test_SJ[-c(9:10)]
+head(test_SJ,3)
+```
+  
+  
+      
+    d. Drop any variables that do not contribute any useful analytical
+      information at all.
+      
+    -> As there is already a counter for rows, there is no need of a seperate column 
+     Index_SJ for indexing the table. So, lets remove it.
+    
+```{r}
+test_SJ <- test_SJ[-c(1)]
+head(test_SJ,3)
+```
+      
+    3. Outliers
+    
+      a. Use an appropriate technique demonstrated in class to identify
+       outliers.
+```{r}
+if(!require(readxl)){install.packages("readxl")}
+library("readxl")
+
+if(!require(pastecs)){install.packages("pastecs")}
+library("pastecs")
+
+if(!require(ggplot2)){install.packages("ggplot2")}
+library("ggplot2")
+
+if(!require(lattice)){install.packages("lattice")}
+library("lattice")
+
+if(!require(tinytex)){install.packages("tinytex")}
+library("tinytex")
+
+```
+       
+```{r}
+
+boxplot(test_SJ$Conn_SJ, horizontal=TRUE, col=67, pch=20)
+boxplot(test_SJ$RC_SJ, horizontal=TRUE, col=67, pch=20)
+boxplot(test_SJ$ST_SJ, horizontal=TRUE, col=67, pch=20)
+boxplot(test_SJ$SMBR_SJ, horizontal=TRUE, col=67, pch=20)
+boxplot(test_SJ$SMBT_SJ, horizontal=TRUE, col=67, pch=20)
+boxplot(test_SJ$FA_SJ, horizontal=TRUE, col=67, pch=20)
+
+
+
+```
+# Density Plots for further details
+
+```{r}
+
+
+densityplot( ~ test_SJ$Conn_SJ, pch=6)
+densityplot( ~ test_SJ$RC_SJ, pch=6)
+densityplot( ~ test_SJ$ST_SJ, pch=6)
+densityplot( ~ test_SJ$SMBR_SJ, pch=6)
+densityplot( ~ test_SJ$SMBT_SJ, pch=6)
+densityplot( ~ test_SJ$FA_SJ, pch=6)
+
+
+
+```
+
+
+       
+       
+      b. Comment on any outliers you see and deal with them
+       appropriately. Make sure you explain why you dealt with them
+       the way you decided to.
+       
+       -> 1.As we can see from the plots, Reconnections made has some values which seems like outliers
+       has negative values which is not practically possible or it seems insensible or meaningless.
+         
+       
+```{r}
+
+densityplot( ~ test_SJ$RC_SJ, pch=6)
+outlierInRC_SJ <- which(test_SJ$RC_SJ <= 0) ##Fond row number with RC less then or equal to 0
+test_SJ <- test_SJ[-c(outlierInRC_SJ),]      #deleted the row
+densityplot( ~ test_SJ$RC_SJ, pch=6)
+
+```
+     2.In the plots for the SMBR and SMBGT the minimum values which is near zero seems to be outliers,
+     hence lets replace them with the mean values of subsequent columns that is SMBR_SJ and SMBR_ST. 
+           
+```{r}
+
+
+densityplot( ~ test_SJ$SMBR_SJ, pch=6)
+test_SJ$SMBR_SJ <- ifelse(test_SJ$SMBR_SJ == min(test_SJ$SMBR_SJ),mean(test_SJ$SMBR_SJ),
+test_SJ$SMBR_SJ)                                              #Replaces min value with the mean in                                                                                                            #SMBR
+densityplot( ~ test_SJ$SMBR_SJ, pch=6)                        # Outlier Adjusted
+
+
+```
+           
+```{r}
+
+densityplot( ~ test_SJ$SMBT_SJ, pch=6)
+test_SJ$SMBT_SJ <- ifelse(test_SJ$SMBT_SJ == min(test_SJ$SMBT_SJ),mean(test_SJ$SMBT_SJ),test_SJ$SMBT_SJ) 
+                                                                      #Replaces min value with the mean in                                                                                                            #SMBT
+densityplot( ~ test_SJ$SMBT_SJ, pch=6)                                 # Outlier Adjusted
+
+
+```
+           
+           
+           
+           3. The same way for the Files Accessed, lets remove the minimum value with mean value of all Files Accessed.
+```{r}
+
+densityplot( ~ test_SJ$FA_SJ, pch=6)
+test_SJ$FA_SJ <- ifelse(test_SJ$FA_SJ == min(test_SJ$FA_SJ),mean(test_SJ$FA_SJ),test_SJ$FA_SJ) 
+                                                            #Replaces min value with the mean
+densityplot( ~ test_SJ$FA_SJ, pch=6)
+
+```
+
+       
+       
+      
+#################################################################################################### 
+      
+ 2 Organizing Data
+    1. Scatter Plots
+        a. Create a histogram for Server Message Blocks Received.
+        
+```{r}
+hist(test_SJ$SMBR_SJ,
+      col = 100,
+     xlab="SMBGR",
+     main="Histogram of SMBR")
+
+```
+        -> Above is the histogram plotted for SMBR, where we can identify the SMBRs having the most
+          common frequency are in the range of 4,500 to 5,500.
+        
+        
+        b. Create a histogram for Server Message Blocks Transmitted.
+        
+        
+```{r}
+hist(test_SJ$SMBT_SJ,
+     col = 100,
+     xlab="SMBT",
+     main="Histogram of SMBT")
+
+```
+        -> In the histogram plotted for SMBT, where we can identify the SMBTs having the most 
+            common frequency are in the range of 9,500 to 10,500.
+        
+        c. Create a scatter plot showing the relationship between SMBR
+           and SMBT. (note: SMBR should be on the x-axis, SMBT should
+           be the y-axis)
+```{r}
+plot(SMBT_SJ ~ SMBR_SJ,
+     data=test_SJ,
+     col=100,
+     pch=4,
+     main="Comparision between SMBT servers AND SMBR ",
+     xlab="Connections Made by Different server",
+     ylab="SMBT servers"
+     )
+
+```
+           
+           
+           
+        d. What conclusions, if any, can you draw from the chart?
+        
+        -> From the scatter plot, we can say that there is a strong positive linear 
+          correlation between SMBT and SMBR. 
+        
+        
+        
+        e. Calculate a correlation coefficient between these two
+          variables. Why did you choose the correlation coefficient you
+          did? What conclusion you draw from it?
+          
+          
+```{r}
+cor(test_SJ$SMBR_SJ,test_SJ$SMBT_SJ,method="pearson")
+```
+    -> It can be clearly observed from scatter plot and histograms that SMBT and SMBR
+      data is continuous and normally distributed. So for such data, we use Pearson method.
+      By evaluating the value of correlation coefficient by Pearson method, we get 
+      0.7626193 which signifies that it has strong linear positive relationship.
+          
+          
+          
+          
+#####################################################################################################          
+          
+3 Inference
+
+  1. Normality
+  
+      a. Create a QQ Normal plot of for Sessions Timed Out.
+      
+      
+```{r}
+
+qqnorm(test_SJ$ST_SJ, main="Is ST_SJ Normal?", pch=20)
+qqline(test_SJ$ST_SJ)
+
+
+```
+       -> By plotting the qqnorm, we can observe that the distribution is not normal.
+      
+      
+      
+      b. Conduct a statistical test for normality on Sessions Timed
+         Out.
+```{r}
+
+ST_New_SJ<- sample(test_SJ$ST_SJ, 5000)
+shapiro.test(ST_New_SJ)
+
+
+```
+         
+         
+      c. Is Sessions Times Out normally distributed? What led you to
+          this conclusion?
+          
+      -> As we have done the normality test by performing shapiro test, by observing the p-value,
+        p_value is less then 0.05,we reject the null hypothesis that the distribution is normal
+        and conclude that the distribution is not normal. 
+          
+  2. Statistically Significant Differences
+  
+      a. Compare Sessions Times Out between the two major
+          Manufacturers in your data set using a suitable hypothesis test.
+          
+```{r}
+
+wilcox.test(ST_SJ ~ Manufacturer_SJ, data=test_SJ, exact=FALSE)
+```
+
+          
+      b. Explain why you chose the test you did.
+      
+     
+      -> As Sessions times out is a continuous data,at the same time we see that there are
+        only two groups being compared. We can also see it this way that it contains 
+        non-parametric data so we shoyuld perfrom Wilcoxon test. 
+      
+      c. Do you have strong evidence that Sessions Times Out are
+          different between Manufacturers?
+          
+        -> Yes, we have strong evidence thatb ST are diff. from manufacturers as the p value
+           very small.
+          
+          
+          
+  3. Multiple Statistical Differences
+  
+      a. Determine if Files Accessed varies by Server using ANOVA
+        (statistical) and a sequence of boxplots (graphical).
+        
+```{r}
+
+#Comparing Servers with Files Accessed
+
+boxplot(test_SJ$FA_SJ ~ test_SJ$Server_SJ, data=test_SJ,
+        main=" Files Accessed by different Servers ",
+        xlab="Different Servers",
+        ylab="Files Accessed",
+        col=67,
+        range=0)
+
+
+
+```
+
+```{r}
+
+#One-Way ANOVA
+
+summary(aov(test_SJ$FA_SJ ~ test_SJ$Server_SJ, data=test_SJ))
+
+ANOVA_For_Servers_SJ <- aov(test_SJ$FA_SJ~Server_SJ, data=test_SJ)
+summary(ANOVA_For_Servers_SJ)
+
+
+
+
+```
+
+       
+       
+     -> It is clearly observed that files Accessed varies by Server .
+
+        
+      b. Determine if Connections Made varies by Server using
+          ANOVA and a sequence of boxplots.
+          
+          
+          
+```{r}
+#Comparing Servers with Connections Made
+
+boxplot(test_SJ$Conn_SJ ~ test_SJ$Server_SJ, data=test_SJ,
+        main=" Connections made by different Servers ",
+        xlab="Different Servers",
+        ylab="Connections made",
+        col=67,
+        range=0)
+
+
+```
+
+          
+```{r}
+
+#One-Way ANOVA
+
+summary(aov(test_SJ$Conn_SJ ~ test_SJ$Server_SJ, data=test_SJ))
+
+ANOVA_For_Connections_SJ <- aov(test_SJ$Conn_SJ~Server_SJ, data=test_SJ)
+summary(ANOVA_For_Connections_SJ)
+
+
+
+
+```
+   
+   
+     -> It is observed that Connections made does not varry by Servers .
+
+          
+        
+    
