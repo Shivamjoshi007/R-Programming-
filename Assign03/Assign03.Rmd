@@ -1,0 +1,479 @@
+---
+title: "Assign03"
+author: "Shivam"
+output: pdf_document
+date: "2023-02-23"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#if(!is.null(dev.list())) dev.off()
+#cat("\014")
+#rm(list=ls())
+options(scipen=9)
+```
+
+```{r}
+if(!require(pastecs)){install.packages("pastecs")}
+library("pastecs")
+
+if(!require(lattice)){install.packages("lattice")}
+library("lattice")
+```
+
+```{r}
+setwd("C:/Users/holys/OneDrive/Desktop/Data Analytics,Mathamatics,Algor/Assign03")
+
+test_SJ <- read.table("PROG8430-23W-Assign03.txt", sep=",", header=TRUE)
+    test_SJ <- as.data.frame(test_SJ)
+    head(test_SJ)
+str(test_SJ)
+
+```
+********************************************************************************
+1. Data Transformation
+
+
+    1. Rename all variables with your initials appended (just as was done in 
+        assignment 1)
+      
+```{r}
+colnames(test_SJ) <- paste(colnames(test_SJ), "SJ", sep = "_")  # renaming all the 
+                                                                # variables and adding
+                                                                # my initials SJ
+  head(test_SJ)
+
+```
+      
+     
+    2. Standardize all of the variables using either of the two functions 
+     demonstrated in class. Describe why you chose the method you did.
+     
+    -> Before standardization of any of the variable, first lets plot boxplot to 
+      observe the distribution of data.
+```{r}
+
+ par(mfrow=c(2,2))                                #defining format of the boxplot
+
+for (i in 1:ncol(test_SJ)) {                      # Generating box plot for each 
+                                                  # variable in th data set using 
+                                                  # for loop
+  if (is.numeric(test_SJ[,i])) {
+      boxplot(test_SJ[i], main= names(test_SJ)[i],
+              horizontal=TRUE, pch=10)
+  }
+}
+
+
+par(mfrow=c(1,1))
+
+```
+
+    ->  By observing and analyzing, it is interpreted that most of the data is not abnormal
+        and very few vaiables out of the total, has a very little outliers.
+        In this case as the data has a very few outliers,I choose to perform min-max 
+        standardization formula for different variables. I chose this method as it preserves
+        the range of data and this method is more suitable here as we do not want to get the
+        data in N(0,1), rather we want it over (0,1).
+    
+    
+```{r}
+#standardization function
+Std_SJ <- function(x) {
+  return ((x - min(x)) / (max(x) - min(x)))          
+}
+```
+
+
+```{r}
+
+test_SJ$Food_Std_SJ  <- Std_SJ(test_SJ$Food_SJ)   # standardizing each variable by
+                                                  # passing it standardization function 
+test_SJ$Enter_Std_SJ <- Std_SJ(test_SJ$Enter_SJ)  # created above
+
+
+test_SJ$Edu_Std_SJ   <- Std_SJ(test_SJ$Edu_SJ)
+
+test_SJ$Trans_Std_SJ <- Std_SJ(test_SJ$Trans_SJ)
+
+test_SJ$Work_Std_SJ  <- Std_SJ(test_SJ$Work_SJ)
+
+test_SJ$House_Std_SJ <- Std_SJ(test_SJ$House_SJ)
+
+test_SJ$Oth_Std_SJ   <- Std_SJ(test_SJ$Oth_SJ)
+
+head(test_SJ)
+```
+
+2 Descriptive Data Analysis
+
+    1. Create graphical summaries of the data (as demonstrated in class: 
+       boxplots, histograms or density plots) and comment on any 
+       observations you make.
+      -> To graphically summarize the data, lets generate box plot:
+
+```{r}
+
+par(mfrow=c(2,2))
+
+for (i in 1:ncol(test_SJ)) {
+  if (is.numeric(test_SJ[,i])) {
+      boxplot(test_SJ[i], main=names(test_SJ)[i],
+              horizontal=TRUE, pch=10)
+  }
+}                              # plotting the box plot of every variable 
+                               # including the box plots of standardized 
+par(mfrow=c(1,1))              # variables as well
+
+```
+   -> From the box plots, it is observed that all the variable have varried ranges 
+      and very few of them have a little outliers including Entertainment and
+      transportation.
+   
+   
+```{r}
+# plotting density plots for graphically
+#analyzing data in detailed way of standardized variables
+densityplot( ~ test_SJ$Food_Std_SJ, pch=6)   
+densityplot( ~ test_SJ$Enter_Std_SJ, pch=6)
+densityplot( ~ test_SJ$Edu_Std_SJ, pch=6)
+densityplot( ~ test_SJ$Trans_Std_SJ, pch=6)
+densityplot( ~ test_SJ$Work_Std_SJ, pch=6)
+densityplot( ~ test_SJ$House_Std_SJ, pch=6)
+densityplot( ~ test_SJ$Oth_Std_SJ, pch=6)
+
+```
+  -> By observing the density plots, one can infer that in each the plots most 
+    of the data point are in the range and very few outliers. 
+  
+  
+********************************************************************************
+  
+  3 Clustering
+    Using the K-Means procedure as demonstrated in class, create 
+    clusters with k=2,3,4,5,6,7.
+    You will be using only two variables as your centroids (House and 
+    Food)
+    
+    -> We have already standardized two variables House and Food as Food_Std_SJ
+        and House_Std_SJ.
+```{r}
+# these are the two variables Food and House in standardized form
+
+centroids_for_plotting_SJ <- c(test_SJ$Food_Std_SJ,test_SJ$House_Std_SJ)
+
+head(centroids_for_plotting_SJ)
+```
+      
+      
+    1. Create segmentation/cluster schemes for k=2,3,4,5,6,7. 
+    ->  Now I made variables below for generating elbow chart to identify and
+        choose the value of K to perform K means clustering.
+       
+
+```{r}
+
+# Creating Variable for Elbow Chart
+# Trying for 2 to 7 Clusters
+maxk_SJ <- 7
+nk_SJ <- c(2:maxk_SJ)
+wss_SJ <- rep(0,maxk_SJ-1)
+
+```
+    
+    
+    
+```{r}
+# As asked in the question,firstly I created clusters keeping the value of k=2
+
+#Set Number of Clusters
+k=2
+
+Clstr_SJ <- kmeans(test_SJ[,c(8,13)], iter.max=10, centers=k, nstart=10)
+Clstr_SJ$size
+Clstr_SJ$centers
+Clstr_SJ$betweenss/Clstr_SJ$totss
+
+test_SJ$cluster <- factor(Clstr_SJ$cluster)   # Adding Cluster tags to variables
+head(test_SJ)
+
+centers_SJ <- data.frame(cluster=factor(1:k), Clstr_SJ$centers)
+
+wss_SJ[k-1] <- Clstr_SJ$tot.withinss
+
+```
+
+```{r}
+#Set Number of Clusters by putting the value of k as 3.
+k=3
+
+Clstr_SJ <- kmeans(test_SJ[,c(8,13)], iter.max=10, centers=k, nstart=10)
+Clstr_SJ$size
+Clstr_SJ$centers
+Clstr_SJ$betweenss/Clstr_SJ$totss
+
+test_SJ$cluster <- factor(Clstr_SJ$cluster)   # Adding Cluster tags to variables
+head(test_SJ)
+
+centers_SJ <- data.frame(cluster=factor(1:k), Clstr_SJ$centers)
+
+wss_SJ[k-1] <- Clstr_SJ$tot.withinss
+
+```
+      
+```{r}
+#Setting the value of k as 4 and creating clusters
+k=4
+
+Clstr_SJ <- kmeans(test_SJ[,c(8,13)], iter.max=10, centers=k, nstart=10)
+Clstr_SJ$size
+Clstr_SJ$centers
+Clstr_SJ$betweenss/Clstr_SJ$totss
+
+test_SJ$cluster <- factor(Clstr_SJ$cluster)   # Adding Cluster tags to variables
+head(test_SJ)
+
+centers_SJ <- data.frame(cluster=factor(1:k), Clstr_SJ$centers)
+
+wss_SJ[k-1] <- Clstr_SJ$tot.withinss
+
+```
+      
+```{r}
+# For value of k as 5 
+k=5
+
+Clstr_SJ <- kmeans(test_SJ[,c(8,13)], iter.max=10, centers=k, nstart=10)
+Clstr_SJ$size
+Clstr_SJ$centers
+Clstr_SJ$betweenss/Clstr_SJ$totss
+
+
+test_SJ$cluster <- factor(Clstr_SJ$cluster)   # Adding Cluster tags to variables
+head(test_SJ)
+
+centers_SJ <- data.frame(cluster=factor(1:k), Clstr_SJ$centers)
+
+wss_SJ[k-1] <- Clstr_SJ$tot.withinss
+
+```
+
+```{r}
+# For value of k=6
+k=6
+
+Clstr_SJ <- kmeans(test_SJ[,c(8,13)], iter.max=10, centers=k, nstart=10)
+Clstr_SJ$size
+Clstr_SJ$centers
+Clstr_SJ$betweenss/Clstr_SJ$totss
+
+test_SJ$cluster <- factor(Clstr_SJ$cluster)   # Adding Cluster tags to variables
+head(test_SJ)
+
+centers_SJ <- data.frame(cluster=factor(1:k), Clstr_SJ$centers)
+
+wss_SJ[k-1] <- Clstr_SJ$tot.withinss
+
+```
+      
+```{r}
+#Set Number of Clusters as k= 7
+k=7
+
+Clstr_SJ <- kmeans(test_SJ[,c(8,13)], iter.max=10, centers=k, nstart=10)
+Clstr_SJ$size
+Clstr_SJ$centers
+Clstr_SJ$betweenss/Clstr_SJ$totss
+
+test_SJ$cluster <- factor(Clstr_SJ$cluster)   # Adding Cluster tags to variables
+head(test_SJ)
+
+centers_SJ <- data.frame(cluster=factor(1:k), Clstr_SJ$centers)
+
+wss_SJ[k-1] <- Clstr_SJ$tot.withinss
+
+```
+
+      2. Create the WSS plots as demonstrated in class and select a     
+         suitable k value based on the “elbow”. [NOTE – Use the code 
+         that I provided to do this. Using other functions will yield 
+         different results.
+         
+        -> As thought in the class, and taking the reference form the example provided,
+          lets make an elbow plot to choose the value of k.
+         
+         
+```{r}
+# Plotting the elbow chart after trying the value of k=2,3,4,5,6,7
+plot(2:maxk_SJ, wss_SJ,
+     type="b", pch = 19, frame = FALSE,   
+     main="Elbow Chart for Clusters",
+     xlab="Values of K",
+     ylab="Total Within-Clusters SS",
+     ylim=c(0,max(wss_SJ)))
+
+
+```
+     -> As observed from the elbow plot,it is clearly observed that the bend is 
+      observed when the value of k is 3. Hence, value of k=3.
+      
+********************************************************************************
+
+  4. Evaluation of Clusters
+      1. Based on the “k” chosen above, create a scatter plot showing the 
+        clusters and colour-coded data points for each of “k-1”, “k”, “k+1”. For 
+        example, if you think the “elbow” is at k=4 create the charts for k=3, 
+        k=4 and k=5.
+        
+        -> As value of k is 3, lets make scatter plot for k=2, 3 and 4.
+        
+```{r}
+k=2
+
+Clstr_SJ <- kmeans(test_SJ[,c(8,13)], iter.max=10, centers=k, nstart=10)
+Clstr_SJ$size
+Clstr_SJ$centers
+Clstr_SJ$betweenss/Clstr_SJ$totss
+
+
+test_SJ$cluster <- factor(Clstr_SJ$cluster)   
+head(test_SJ)
+
+centers_SJ <- data.frame(cluster=factor(1:k), Clstr_SJ$centers)
+
+wss_SJ[k-1] <- Clstr_SJ$tot.withinss
+
+plot(test_SJ$Food_Std_SJ, test_SJ$House_Std_SJ, #ploting scatter plot for analyzing
+     col=test_SJ$cluster, 
+      main=" When K=3 ",
+     xlab="Food ",
+     ylab="House",
+     pch=as.numeric(test_SJ$cluster)) # when k= 2
+points(centers_SJ$Food_Std_SJ, centers_SJ$House_Std_SJ,
+       col=centers_SJ$cluster, pch=as.numeric(centers_SJ$cluster),
+       cex=3, lwd=3)
+
+
+
+```
+        
+        
+```{r}
+k=3
+
+Clstr_SJ <- kmeans(test_SJ[,c(8,13)], iter.max=10, centers=k, nstart=10)
+Clstr_SJ$size
+Clstr_SJ$centers
+Clstr_SJ$betweenss/Clstr_SJ$totss
+
+
+test_SJ$cluster <- factor(Clstr_SJ$cluster)   
+head(test_SJ)
+
+centers_SJ <- data.frame(cluster=factor(1:k), Clstr_SJ$centers)
+
+wss_SJ[k-1] <- Clstr_SJ$tot.withinss
+
+plot(test_SJ$Food_Std_SJ, test_SJ$House_Std_SJ, #ploting scatter plot for analyzing
+     col=test_SJ$cluster, 
+      main=" When K=3 ",
+     xlab="Food ",
+     ylab="House",
+     pch=as.numeric(test_SJ$cluster)) # when k=3
+points(centers_SJ$Food_Std_SJ, centers_SJ$House_Std_SJ,
+       col=centers_SJ$cluster, pch=as.numeric(centers_SJ$cluster),
+       cex=3, lwd=3)
+
+
+
+```
+
+```{r}
+k=4
+
+Clstr_SJ <- kmeans(test_SJ[,c(8,13)], iter.max=10, centers=k, nstart=10)
+Clstr_SJ$size
+Clstr_SJ$centers
+Clstr_SJ$betweenss/Clstr_SJ$totss
+
+test_SJ$cluster <- factor(Clstr_SJ$cluster)   
+head(test_SJ)
+
+centers_SJ <- data.frame(cluster=factor(1:k), Clstr_SJ$centers)
+
+wss_SJ[k-1] <- Clstr_SJ$tot.withinss
+
+plot(test_SJ$Food_Std_SJ, test_SJ$House_Std_SJ, #ploting scatter plot for analyzing
+     col=test_SJ$cluster, 
+      main=" When K= 4",
+     xlab="Food ",
+     ylab="House",
+     pch=as.numeric(test_SJ$cluster)) # when k= 4
+points(centers_SJ$Food_Std_SJ, centers_SJ$House_Std_SJ,
+       col=centers_SJ$cluster, pch=as.numeric(centers_SJ$cluster),
+       cex=3, lwd=3)
+```
+        
+
+
+      2. Based on the WSS plot (3.2) and the charts (4.1) choose one set of 
+        clusters that best describes the data.
+      -> By observing the elbow chart and then plotting the scatter plot, the cluster 
+          which is having lowest values for houses and food, is the one in which
+          the points are most thighly bound. So, it describes data the best when 
+          the value of k is 3.
+          
+      
+        
+      3. Create summary tables for the segmentation/clustering scheme 
+        (selected in step 4.2).
+        
+```{r}
+
+SummClusters_SJ <- aggregate(cbind(Food_SJ,Enter_SJ ,Edu_SJ,Trans_SJ,
+                           Work_SJ,House_SJ,Oth_SJ) ~ cluster, test_SJ,
+                           FUN=mean)
+SummClusters_SJ
+
+
+```
+
+         
+         4. Create suitable descriptive names for each cluster.
+         
+        -> By analyzing the three cluster s while putting the value of k as 3,
+            the relevent titles of each of them as as follows:
+                Cluster 1: Food and Housing Insecurity/ Lower Class / Poor
+                          - as observed, people having very less food and 
+                            very little house or no houses, this is the category
+                            or cluster of people belonging to very poor financial
+                            background.
+                Cluster 2: Basic needs met/ Middle class/ Modetate 
+                          - this is the cluster which belongs to the middle clas
+                          and upper middle class pople having gtheir basic 
+                          neccecities fulfiled.
+                Cluster 3: Food and Housing Security/ High class / Rich
+                          - this is the cluster representing the priviledged people
+                           who are financially free.
+              
+      
+        5. Suggest possible uses for this clustering scheme.
+
+         -> By this clustering, one group unorganized and unlabelled under 
+            differnet clusters, depending on the value of k decided. 
+           By using the clustering sceme the government can analyze and make 
+           dicisions for the betterment of any of the group identifiend. 
+           
+          According to the clustering, one can know where more number of houses
+          are there, this can help in real estate market analysis.The urabn planning
+          of the city can also be done on the basis of the inffered data.
+          
+          Planning of food supply, and schemes for food in low prizes can be done
+          by the government by the data. 
+          
+         
+##############################################################################################################         
+         
