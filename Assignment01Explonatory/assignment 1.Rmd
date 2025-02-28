@@ -1,0 +1,458 @@
+---
+title: "Assn1"
+author: "Shivam"
+output: pdf_document
+date: "2023-01-31"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+1.You are working Streaming Service. The following statement is made by your
+  manager. Based on the examples and discussion in Lecture 1, transform it in
+  to a question that can be answered with data analytics. Make sure you
+  discuss the logic and reasoning you use to transform it and what questions
+  you might ask. 
+  
+  "We have more customers than before, but our new customers are streaming
+  less than before."
+
+
+  -1. The first question that came in my mind after reading the above statement was what percentage of customers 
+    increased as compared to previous timeline?
+    
+    By answering this question we can quantify what chunk of customers were affecting the streaming time.
+    
+  -2. How many hours of streaming on average do our new customers do compared to our old customers?
+
+    Once we get to know the numbers in detail, we can find the reason behind to improve the results and may help to        increase the streaming hours as well.
+    
+  -3. How do the streaming preferences of new and returning customers differ across various demographic categories             (such as age, gender, and location)?
+    
+    If we analyse how the streaming history of this new or returning customers is scattered over the geographical          range, for example if the new costomers who are streaming less are from particular area or sector , as a               representative of a streaming company, we can suggest ideas like advertisements and offering promo codes and             discounts in that particular region to increase the revenue.
+    
+    Similarly if the company can figure out which age group or gender  is helping to increase the average streaming        rate, company can grow  by providing the prefferable content of the particular group of customers.
+    
+    
+  -4. What factors may be contributing to the decrease in usage among new customers? 
+
+   This question helps to identify any external or internal factors that may be contributing to the decrease in usage.     This may help later to solve the issue and increase the streaming hours.
+   
+   
+
+```{r}
+setwd("C:/Users/holys/OneDrive/Desktop/Data Analytics,Mathamatics,Algor/Assignment01Explonatory")
+```
+ 2.Consider the following three arrays of data. Each array is data for one file
+   sharing site. The numbers in the array represent the number of downloads
+   for each site in a day (for example, Site A had 28 downloads on the first day,
+   29 on the second and so on).
+   
+    Site A: (28 29 31 28 30 30 30 32 28 33)
+    Site B: (23 19 23 33 32 27 20 24 42 32)
+    
+  Based on the data provided, and using the skills learned in this class, answer
+  the following questions. Make sure to provide evidence for your answers.
+
+a) Which customer streams the least on a typical day?
+  
+```{r}
+
+A_SJ <- c(28,29,31,28,30,30,30,32,28,33)
+B_SJ <- c(23,19,23,33,32,27,20,24,42,32)
+C_SJ <- c(27,26,28,25,27,27,30,30, 28,26)
+
+#On a typical day, average number of customers who stream Site A:
+  mean(A_SJ)                                                                      # the mean for site A is :- 29.9
+
+#On a typical day, average number of customers who stream Site B:
+  mean(B_SJ)                                                                      # the mean for site B is :- 27.5
+
+#On a typical day, average number of customers who stream Site C:
+  mean(C_SJ)                                                                      # the Mean for site C is :- 27.4
+
+#Site C has the lowest average of viewers in ten days, hence site c has the least number of customers on a typical day. 
+
+```
+  b) Which customer is the most inconsistent in the usage of the 
+   streaming service?
+
+   To measure the most inconsistent Site, we have to measure the standard deviation  is the square root of the             variance:
+   
+```{r} 
+  sd(A_SJ)                                                                                              # 1.72884
+
+
+
+
+sd(B_SJ)                                                                                                # 7.168604
+
+sd(C_SJ)                                                                                                # 1.646545
+
+#Site B has the highest standard deviation value, which implies that it is the most inconsistent usage of streaming service.
+
+```
+######################################################################
+PART 2
+######################################################################
+Question 1
+
+1. Read in the text file and change to a data frame.
+```{r}
+setwd("C:/Users/holys/OneDrive/Desktop/Data Analytics,Mathamatics,Algor")
+
+test_SJ <- read.table("PROG8430-23W-Assign01 (1).txt", sep=",", header=TRUE)
+
+
+    test_SJ <- as.data.frame(test_SJ)
+    head(test_SJ)
+```
+
+2. Append your initials to all variables in the data frame (Note – you will
+    need to do this in all your subsequent assignments).
+```{r}
+ colnames(test_SJ) <- paste(colnames(test_SJ), "SJ", sep = "_")
+  head(test_SJ)
+
+```
+    
+3. Change each character variable to a factor variable.
+```{r}
+
+test_SJ$Manufacturer_SJ <- factor(test_SJ$Manufacturer_SJ)
+test_SJ$Server_SJ       <- factor(test_SJ$Server_SJ)
+test_SJ$DC_SJ           <- factor(test_SJ$DC_SJ)
+
+```
+ 
+ 4. What are the dimensions of the dataset (rows and columns)?
+ 
+```{r}
+ dim(test_SJ) 
+# dim() function is used to return the dimensions of the table/ datasets / number of rows and columns 
+
+```
+
+
+#################################################################################################################
+
+Question 2
+Summarizing Data
+
+ 1. Means and Standard Deviations:-
+   
+   a. Calculate the mean and standard deviation for Server
+    Message Blocks Received.
+```{r}
+
+
+    mean(test_SJ$SMBR_SJ)                                                                                #[1] 100017.5
+
+    sd(test_SJ$SMBR_SJ)                                                                                   #[1] 10002.46
+    
+    
+```
+    # b. Use the results above to calculate the coefficient of variation
+      (rounded to 3 decimal places).
+
+```{r}
+
+
+      CV <- (sd(test_SJ$SMBR_SJ) / mean(test_SJ$SMBR_SJ)) 
+      round(CV,3)
+    
+                                                                                                            #[1] 0.1
+
+```
+ c. Calculate the mean and standard deviation for Server
+      Message Blocks Transmitted.
+```{r}
+
+
+        
+      mean(test_SJ$SMBT_SJ)                                                                               #[1] 10024.44
+      
+      
+     
+      
+      sd(test_SJ$SMBT_SJ)                                                                                 #[1] 10024.44
+      
+      
+  
+    
+```
+
+    # d. Also calculate the coefficient of variation (rounded to 3
+    #   decimal places).
+      
+```{r}
+
+    CV_of_SMBT <- (sd(test_SJ$SMBT_SJ) / mean(test_SJ$SMBT_SJ)) 
+    CV_of_SMBT                                                                                         #[1] 0.2006251
+    
+    
+    
+```
+    # e. Does the SMBT or SMBR have more variation?
+```{r}
+    var_of_SMBR <- var(test_SJ$SMBR_SJ)
+
+    var_of_SMBT <- var(test_SJ$SMBT_SJ)
+    
+    var_of_SMBR                                                                                         #[1] 100049172
+    
+    var_of_SMBT                                                                                         #[1] 100049172    
+   
+```
+    # sd_of_SMBT > sd_of_SMBR
+    
+    # SMBT have more variation.
+    
+    
+ 2. Calculate the 45th percentile of the number of Server Message Blocks
+    Transmitted. This calculation should be rounded to the nearest whole
+    number (no decimal places).
+ 
+  To fing the 45 th percentile of number of SMBT we will use quantile() function. 
+   We will also use round() function for rounding up the value to the nearest value.
+```{r}
+
+    quantile(test_SJ$SMBR_SJ,probs = 0.45)
+
+    round(quantile(test_SJ$SMBR_SJ,probs = 0.45))                                                              #45%                                                                                                                 #98732
+    
+```
+
+
+#######################################################################################
+    
+Question 3
+
+    
+#Organizing Data
+    
+     1. Summary Table
+     
+        a. Create a table showing the average Server Message Blocks
+          Transmitted by Manufacturer. This should be rounded to two
+          decimal places.
+    
+
+```{r}
+
+    
+    Average_SMBT_SJ <- aggregate(test_SJ$SMBT_SJ,
+                                by=list(test_SJ$Manufacturer_SJ),
+                                FUN=function(m){round(mean(m),digits=2)})
+    
+    colnames(Average_SMBT_SJ) <- c("Manufacturer","Average")
+    
+    Average_SMBT_SJ
+    
+```
+     b. Which Manufacturer’s Servers have, on average, transmitted
+        the most server message blocks? Which manufacturer is it?
+     
+         Lled transmitted the the most server message blocks with average of 50008.12.
+      
+    
+ 2. Cross Tabulation
+     
+     a. Create a table counting all Servers by Data Centre.
+     
+```{r}
+
+    Servers_And_DCs_SJ <- table(test_SJ$Server_SJ,test_SJ$DC_SJ)                       
+    Servers_And_DCs_SJ
+    
+```
+  
+  
+     b. Change the table to show the percentage of each Server in
+        each Data Centre . This should be rounded to three decimal
+       places.
+    
+```{r}
+    
+     Servers_in_percentage_SJ <- prop.table(Servers_And_DCs_SJ) 
+      round(Servers_in_percentage_SJ,3)
+    
+```
+    
+     c. What percentage of servers at Elmira are MG9696?
+     
+         MG9696 was about 1.6% at Elmira. 
+        
+ 3. Bar Plot
+
+   a. Create a bar plot of count of Servers Models.
+   
+
+
+```{r}
+Count_Servers_SJ <- table(test_SJ$Server_SJ)
+barplot(Count_Servers_SJ)
+
+test_SJ <- as.data.frame(test_SJ)
+    head(test_SJ)
+
+```
+b. The plot should be:
+
+      i. Rank ordered by highest count of Server Model.
+      
+      
+```{r}
+Servers_Ordered_by_count_SJ <- Count_Servers_SJ[order(Count_Servers_SJ,decreasing=TRUE)]
+barplot(Servers_Ordered_by_count_SJ)
+
+```
+      
+      
+  
+ii. Properly labeled (title, x-axis, etc)
+      
+      
+```{r}
+
+barplot(Servers_Ordered_by_count_SJ,
+        col=3,
+        density = 30, angle = 30,
+        main="Bar Plot of Servers Ordered By Count",
+        xlab="Servers",
+        ylab = "Number of Count")
+
+
+```
+      
+      
+      
+    iii. The bars should have a different colour than the one
+          shown in class.
+    
+
+```{r}
+
+barplot(Servers_Ordered_by_count_SJ,
+        col=108,
+        density = 30, angle = 30,
+        main="Bar Plot of Servers Ordered By Count",
+        xlab="Servers",
+        ylab = "Number of Count")
+
+
+
+
+```
+c. Based on the bar plot, (approximately) how many of Server
+  RX8838 are there?
+  
+  In the above graph plotted we can say that approximately 8,500 Server RX8838 are there.
+  
+  
+  
+4. Histogram
+
+a. Create a histogram of Server Message Blocks Transmitted.
+
+```{r}
+hist(test_SJ$SMBT_SJ)
+
+```
+
+
+b. The plot should be properly labeled and a unique colour and
+  have 10 breaks.
+```{r}
+hist(test_SJ$SMBT_SJ,
+     col = 100,
+     breaks = 10,
+     xlab="SMBGT",
+     xlim = c(12000,95000),
+     main="Histogram of SMBT")
+```
+  
+c. Which range of SMBT is the most common?
+   -By the above histogram we can depict the most common range is 40,000-60,000.
+   
+   
+5. Box plot
+  a. Create a horizontal box plot of number of Connections Made.
+```{r}
+
+boxplot(test_SJ$Conn_SJ,
+        horizontal=TRUE,
+        pch=20)
+
+```
+  
+  
+    b. The plot should be properly labeled and a unique colour.
+```{r}
+
+
+boxplot(test_SJ$Conn_SJ, 
+        main="Distribution of Number of Connection Made",
+        xlab="Number of Connections made By different servers",
+        col=67,
+        horizontal=TRUE,
+        pch=20)
+
+```
+  
+  
+  
+  c. Based on the box plot, approximately how many servers
+    made fewer than 6160 connections?
+    
+    According to the box plot nearly  25% of the total servers that is; 22,500 servers made less connection then 6160.
+    
+6. Scatter Plot
+
+  a. Create a scatter plot comparing Server Message Blocks
+      Transmitted and Connections Made.
+
+```{r}
+plot(SMBT_SJ ~ Conn_SJ,
+     data=test_SJ,
+     main="  ")
+
+#You can change some formating
+
+plot(SMBT_SJ ~ Conn_SJ,
+     data=test_SJ)
+abline(coef = c(6,0)) #overlays a line, intercept=60, slope=0
+
+```
+  
+
+b. The plot should be properly labeled with a marker type
+    different than the one demonstrated in class.
+    
+
+```{r}
+plot(SMBT_SJ ~ Conn_SJ,
+     data=test_SJ,
+     main="  ")
+
+#You can change some formating
+
+plot(SMBT_SJ ~ Conn_SJ,
+     data=test_SJ,
+     col=100,
+     pch=4,
+     main="Comparision between SMBT servers AND Connections made ",
+     xlab="Connections Made by Different server",
+     ylab="SMBT servers ")
+abline(coef = c(6,0)) #overlays a line, intercept=60, slope=0
+
+```
+
+    
+  c. Does there appear to be an association between Server
+     Message Blocks Transmitted and Connections Made?
+     
+    By watching the Scatter plot we can say that the data points are dense enough so one 
+    can conclude that their is strong correlation between SMBT servers and Connections made.  
+    
