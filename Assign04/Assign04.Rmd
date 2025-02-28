@@ -1,0 +1,549 @@
+---
+title: "Assign04"
+author: "Shivam"
+date: "2023-03-24"
+output: pdf_document
+---
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#if(!is.null(dev.list())) dev.off()
+#cat("\014")
+#rm(list=ls())
+options(scipen=9)
+```
+
+  -Loading the required packages for performing all the tasks.
+```{r}
+if(!require(pastecs)){install.packages("pastecs")}
+library("pastecs")
+
+if(!require(lattice)){install.packages("lattice")}
+library("lattice")
+
+if(!require(corrgram)){install.packages("corrgram")}
+library("corrgram")
+
+```
+- Clearing the console and the whole workplace,to start with neat and clean workplace .
+```{r}
+
+# Clear plots
+if(!is.null(dev.list())) dev.off()
+
+# Clear console
+cat("\014") 
+
+# Clean workspace
+rm(list=ls())
+
+```
+
+```{r}
+#Setting the work directory
+setwd("C:/Users/holys/OneDrive/Desktop/Data Analytics,Mathamatics,Algor/Assign04")
+
+```
+********************************************************************************
+1 Preliminary and Exploratory 
+
+```{r}
+dataset_SJ <- read.table("PROG8430_Assign04_23W.txt", header = TRUE, sep = ",")
+
+dataset_SJ[0:15,]     #Printing first 5 data points from the database
+                      #to make sure it looks correct
+
+str(dataset_SJ)
+```
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1. Rename all variables with your initials appended (just as was done in 
+  assignment 1,2 and 3)
+  
+```{r}
+colnames(dataset_SJ) <- paste(colnames(dataset_SJ), "SJ", sep = "_")  # renaming all the 
+                                                                # variables and adding
+                                                                # my initials SJ
+  head(dataset_SJ)
+
+```
+```{r}
+# Changed all the character variables to factors as to use them
+#to plot and examine with the help of code given in the announcement
+
+dataset_SJ <- as.data.frame(unclass(dataset_SJ), stringsAsFactors = TRUE)
+
+```
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  2. Examine the data using the exploratory techniques we have learned in 
+     class. Does the data look reasonable? Are there any outliers? 
+     If so, deal with them appropriately. 
+   
+  - Studying the data set, and going through each fields, which is giving
+  information of the a mail order company, which tracks the time it
+  takes for a customer to receive his/her order.The DL field represents
+  the time taken for delivery in days, VN tells about   how long the product 
+  has been in warehouse, PG tells about how many packages are made of the 
+  product which has been ordered, CS  gives information about the customers
+  and shows how many orders he/she had made in past, ML tells about the distance
+  in km one have to travel to deliver the order, there are some fields which gives           
+  information regarding the individual products like whether the product is
+  manufactured in Canada or elsewhere, indicating if the product is Hazardous(H)
+  or not(N).CR indicates which type of Carrier delivered the item (Def Post,
+  or Sup Del)and WT tells the weight of the shipment.
+     
+
+  - lets plot box-plot to see the distribution of data points, and see if it
+    has any outliers.
+```{r}
+ par(mfrow=c(2,2))                                #defining format of the boxplot
+
+for (i in 1:ncol(dataset_SJ)) {                   # Generating box plot for each 
+                                                  # variable in th data set using 
+                                                  # for loop
+  if (is.numeric(dataset_SJ[,i])) {
+      boxplot(dataset_SJ[i], main= names(dataset_SJ)[i],
+              horizontal=TRUE, pch=10)
+  }
+}
+
+
+par(mfrow=c(1,1))
+
+```
+- I observed how the data is distributed in different fields and do any of 
+  the fields have outliers or un-important data. The data is distributed
+  properly and some of the fields we have some extreme data points but still
+  they are in the range and are reasonable enough to be considered in a data set
+  except one data point which is negative in the field PG that is packages , which is       
+  impossible to have value of -2, it clearly signifies that something is fishy going        
+  there!lets make density plots for more clarity and to get details.
+ 
+
+```{r}
+# plotting density plots for graphically
+#analyzing data in detailed way of standardized variables
+densityplot( ~ dataset_SJ$DL_SJ, pch=6)   
+densityplot( ~ dataset_SJ$VN_SJ, pch=6)
+densityplot( ~ dataset_SJ$PG_SJ, pch=6)
+densityplot( ~ dataset_SJ$CS_SJ, pch=6)
+densityplot( ~ dataset_SJ$ML_SJ, pch=6)
+densityplot( ~ dataset_SJ$WT_SJ, pch=6)
+
+
+```    
+  -I can clearly see that the PG field have a negative observation which does
+  not make any sense as PG refers to the number of packages of product that
+  have been ordered, and that being negative is impossible unless it is a 
+  mistake or wrong interpretation. No product can have number of packages equal 
+  to -2. So, its a meaning less data point which should be removed.
+  
+```{r}
+# Removing the outlier
+
+
+outlier_In_PG_SJ <- which(dataset_SJ$PG_SJ < 0) ##Fond row number with PG 
+                                                #less then to 0
+dataset_SJ <- dataset_SJ[-c(outlier_In_PG_SJ),]   #deleted the row
+densityplot( ~ dataset_SJ$PG_SJ, pch=6)
+
+
+```
+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  3. Using an appropriate technique from class, determine if there is any 
+    evidence if one Carrier has faster delivery times than the other.
+    Make sure you explain the approach you took and your conclusions.
+  
+    - As DL shows the delivery time and Carriers shows the type of carriers, if
+    I want to know of any of the Carrier has faster delivery time then others, 
+    for that lets check the mean value of both the different kinds of carriers 
+    and see if any of the one has greater value then the other.As their are two
+    variable,we will conduct t-test.For that we have to perform t-test to get the
+    mean values. 
+    
+```{r}
+
+shapiro.test(dataset_SJ$DL_SJ)        # To check the normality First before
+                                      #performing t test to match the assumptions
+
+```
+- As we can see the p value is approx 0.33 which is more then 0.05, so i can
+  conclude that the data set is normally distributed.
+  - Also both the variables, delivery time and carriers are independent,because
+    the type of carrier is s dependent on the type of product., similarly the
+    delivery time is dependent on the distance where the order have to be delivered
+    or to the weight of the ordered product and not dependent to the package type.  
+  
+  -Hence, as I understood that the variables are independent and the distributed 
+  normally, I will perform t-test for the two variables DL and CR.
+
+```{r}
+#Performing t test of Carriers with their Delivery time 
+t.test(dataset_SJ$DL_SJ ~ dataset_SJ$CR_SJ)
+
+```
+
+  -As clearly observed from the t-test, there is significant variance between both
+  the means of different groups of the field CR, its approx 7.84 for Def Post and 
+  its 8.9 for Sup Del.
+  I can say that that Def Post Carrier delivers approx 1.05 times faster then 
+  Sup Del Carrier , so now I can conclude with evidence that one of the group 
+  that is Def Post has faster delivery times. 
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  4. As demonstrated in class, split the data frame into a training and 
+     a test file. This should be a 80/20 split. For the set.seed(), use 
+    the last four digits of your student number. The training set will be
+    used to build the following models and the test set will be used to
+    validate them.
+
+- Splitting the data set into two parts as learned in the classes, 
+  one train set and the other test set. I kept the sampling rate as 0.8,
+  so splitting the data into 80/20 ratio. Also set the seed as 9647 according 
+  to the last four digits of my student number.
+```{r, echo=FALSE}
+# Choose sampling rate
+sr <- 0.8
+
+# Find the number of rows of data
+n.row <- nrow(dataset_SJ)
+
+#Choose the rows for the traning sample 
+
+set.seed(9647)
+training.rows <- sample(1:n.row, sr*n.row, replace=FALSE)
+
+#Assign to the training sample
+
+train_SJ <- subset(dataset_SJ[training.rows,])
+
+# Assign the balance to the Test Sample
+
+test_SJ <- subset(dataset_SJ[-c(training.rows),])
+
+#summary(dataset_SJ)
+#summary(test_SJ)
+#summary(train_SJ)
+
+#Compare some summaries
+round(mean(dataset_SJ$DL_SJ),4)
+round(mean(train_SJ$DL_SJ),6)
+round(mean(test_SJ$DL_SJ),6)
+
+```
+********************************************************************************
+2 Simple Linear Regression 
+
+  1. Correlations: Create both numeric and graphical correlations 
+  (as demonstrated in class) and comment on noteworthy correlations you 
+  observe. Are these surprising? Do they make sense?
+
+-As the three fields, DM, HZ and CR are factor variables, they represent the 
+  information of the products like where it is manufactured, whether it is
+  hazardous or not and in what type of carrier the order is transported into 
+  respectively. It does no have any numerical data, so such data cannot give
+  results with plotting functions, so I will omit it and perform pairs() function 
+  and cor() function to see the relationships of different fields. 
+
+
+```{r}
+train_cor_SJ <- train_SJ[-c(6:8)]   #Removing factor variables for performing
+                                    #correlation functions
+
+pairs(train_cor_SJ)
+```
+ - From the result above, I can clearly sat that all the fields have different 
+  relationships with each other, all data points show appropriate observations 
+  and there's nothing not normal or something to get concerned for in the data.
+  Some of the variables like DL and PG moderate positive relationship  between
+  them, also  DL has moderate negative relationship. We can also see the variables
+  having very weak relations with  the variable DL, for instance we can see from
+  the matrix that VN that is vintage or the time the product has been in the 
+  warehouse, has no relation with the delivery time.  
+  
+  Lets get the numeric coefficients of correlation by between different variables
+  to understand the relationship in a better way.   
+ 
+  - Performing cor() function to get numerical correlation coefficients:
+
+```{r}
+
+Corr_SJ <- cor(train_cor_SJ)
+round(Corr_SJ,2)
+
+```
+This shows as the weight increases the delivery time also get affected by -0.4
+and the delivery time has a moderate positive relation with the number of packages 
+with the correlation coefficient of 0.45. The distance the order need to travel to 
+get delivered also has a weak positive relationship with the delivery time with the
+coefficient of 0.15.
+Similarly, I can obtain the same results by using the corrgram function from corrgram
+package. 
+*
+-Graphical representation by using corrogram function 
+```{r}
+
+corrgram(train_cor_SJ, order=TRUE, lower.panel=panel.shade,
+         upper.panel=panel.pie, text.panel=panel.txt,
+         main="Correlations")
+
+```
+- As it is observed, the blue colour signifies the positive relationship and the
+  red colour shows the negative correlation between variables. The brightness or 
+  the shade of the colour shows the strength of the relationship, darker the colour, 
+  stronger the relation and lighter the colour of the shade weaker the relation. 
+  As observed, DL and Pg has a moderate positive relationship which I can infer
+  from the dark blue colour on the intersection of the two variables. The percentage
+  of relationship can can be observed from the pie chart besides the variables labeled .
+  As, there is negative moderate relationship of coefficient 0.4 between the weight of 
+  shipment and delivery time we can see a little bit darker tone of red to signify the 
+  relationship as well as the strength of it.
+  
+*********************************************************************************************
+2. Create a simple linear regression model using time for delivery as the 
+  dependent variable and weight of the shipment as the independent. Create a 
+  scatter plot of the two variables and overlay the regression line.
+
+ -Lets make a simple linear model named delivery_weight_model_SJ between the two
+ variables signifying delivery time and weight of the shipment that is DL and WT 
+ respectively. Here, DL is the Dependent variable and weight is independent.
+```{r}
+
+delivery_weight_model_SJ <- lm(DL_SJ ~ WT_SJ, data=train_SJ)
+delivery_weight_model_SJ
+
+summary(delivery_weight_model_SJ)     #Observing the results and the model.
+
+```
+
+
+```{r}
+# Plotting the scatter plot to get the regression line 
+plot(DL_SJ ~ WT_SJ, data= train_SJ,
+     main="Delivery time by Weight of shipment (with Regression Line)")
+abline(delivery_weight_model_SJ)
+
+```
+ - From  the plot, the regression line, I can infer that all the data points
+   are scattered in the specified range, and the line is inclined downwards due
+   to some of the data points having high weight and low delivery time. Overall,
+   it is a good dataset having a proper regression line. 
+
+*********************************************************************************
+3. Create a simple linear regression model using time for delivery as the 
+  dependent variable and distance the shipment needs to travel as the 
+  independent. Create a scatter plot of the two variables and overlay the 
+  regression line.
+
+  -Creating a simple linear model named delivery_distance_model_SJ between the two
+  variables signifying delivery time and  Distance the order needs to be 
+  delivered (in km)that is DL and ML respectively. 
+  Here, DL is the Dependent variable and ML is independent.
+```{r}
+delivery_distance_model_SJ <- lm(DL_SJ ~ ML_SJ, data=train_SJ)
+delivery_distance_model_SJ
+
+summary(delivery_distance_model_SJ)  #Observing the results and the model
+
+```
+
+```{r}
+# Plotting the scatter plot to get the regression line 
+plot(DL_SJ ~ ML_SJ, data= train_SJ,
+     main="Delivery time by distance the order needs to be delivered (with Regression Line)")
+abline(delivery_distance_model_SJ)
+
+```
+ - From  the plot, the regression line, I can infer that all the data points
+   are scattered in the specified range and distributed near the mean, that is,
+   the orders are delivered in near about 8 hours for the orders having range of
+   distance from 0 km to 2000 km,the line of regression is consistent throughout  
+   the dataset. Overall,it is a good dataset having a proper regression line. 
+
+********************************************************************************
+4. As demonstrated in class, compare the models (F-Stat, R^2, RMSE for train 
+  and test, etc.) Which model is superior? Why? 
+
+
+```{r}
+                                                        
+                            
+summary(delivery_weight_model_SJ)       # for obtaining the F- stat, residuals,
+                                        # Adjusted R-squared lest get the summary
+                                        #  for the weight model
+
+# Made a prediction model and calculated the RMSE for train set 
+pred_weight_SJ <- predict(delivery_weight_model_SJ, newdata=train_SJ)
+RMSE_weight_trn_SJ <- sqrt(mean((train_SJ$DL_SJ - pred_weight_SJ)^2))
+round(RMSE_weight_trn_SJ,3)
+
+# Made a prediction model and calculated the RMSE for test set 
+pred_weight_test_SJ <- predict(delivery_weight_model_SJ, newdata=test_SJ)
+RMSE_weight_tst_SJ <- sqrt(mean((test_SJ$DL_SJ - pred_weight_test_SJ)^2))
+round(RMSE_weight_tst_SJ,3)
+
+```
+- Observing the summary of the model, I can infer that the residuals are satisfying 
+  that is the median is near to zero and between 1Q and 3Q same which are also similar 
+  similar just having different sign. The model also passes the f-test, as the
+  f-stat value is less then 0.05, Adjusted R^2 value is 0.1583. While, comparing the 
+  RMSE for both the train and test set,that is 1.595 and 1.629 respectively,  they
+  are similar which tells that the model is good,and not under-fitting or over-fitting.
+  It also passes the t-test with p-value less then 0.05,the coefficients
+  are also consistent. 
+
+```{r}
+
+summary(delivery_distance_model_SJ)    # for obtaining the F- stat, residuals,
+                                        # Adjusted R-squared lest get the summary
+                                        #  for the distance model
+
+# Made a prediction model and calculated the RMSE for train set 
+pred_distance_SJ <- predict(delivery_distance_model_SJ, newdata=train_SJ)
+RMSE_distance_trn_SJ <- sqrt(mean((train_SJ$DL_SJ - pred_distance_SJ)^2))
+round(RMSE_distance_trn_SJ,3)
+
+# Made a prediction model and calculated the RMSE for test set 
+pred_distance_test_SJ <- predict(delivery_distance_model_SJ, newdata=test_SJ)
+RMSE_distance_tst_SJ <- sqrt(mean((test_SJ$DL_SJ - pred_distance_test_SJ)^2))
+round(RMSE_weight_tst_SJ,3)
+
+```
+ - Observing the summary of the model, I can infer that the residuals are satisfying 
+  that is the median is near to zero and between 1Q and 3Q same which are also similar 
+  similar just having different sign. The model also passes the f-test , as the
+  f-stat value is less then 0.05, Adjusted R^2 value is 0.02067. While, comparing the 
+  RMSE for both the train and test set,that is 1.72 and 1.692 respectively, they
+  are similar which tells that the model is good,and not under-fitting or over-fitting.
+  It also passes the t-test with p-value less then 0.05,the coefficients are
+  also consistent. 
+  
+  - As all the aspects like Residuals, F-stat, RMSE are giving similar and
+  satisfactory results in both the models  and only the adjusted R^2 value differs,
+  now as thought in the lectures, I learned that higher the value of adjusted R^2  
+  better the model. 
+  
+  So, here I would suggest that the delivery_weight_model_SJ is better which has DL
+  and WT as variables  as compared to the model having distance,
+  i.e;delivery_distance_model_SJ.
+  
+ 
+
+********************************************************************************
+
+  3 Model Development – Multivariate 
+
+    As demonstrated in class, create two models, one using all the variables and 
+    the other using backward selection. This should be built using the train set 
+    created in Step 2. For each model interpret and comment on the main 
+    measures we discussed in class (including RMSE for train and test).(Your 
+    commentary should be yours, not simply copied from my example).
+    
+    - Creating  the model, using all the variables, that is full model named 
+    full_model_SJ, after that to get the stats and information about the residuals,
+    t test, f test, adjusted R^2 values, we will peerform the summmary function.
+    We will buit predicted models for both the train and test sets and will calculate the 
+    RMSE values,and check how the model is.
+```{r}
+#########################################
+## Creating Baseline/Full Model        ##
+#########################################
+
+full_model_SJ = lm( DL_SJ ~ . ,
+            data=train_SJ, na.action=na.omit)
+summary(full_model_SJ)
+
+# Made a prediction model and calculated the RMSE for train set 
+pred_full_SJ <- predict(full_model_SJ, newdata=train_SJ)
+RMSE_trn_full_SJ <- sqrt(mean((train_SJ$DL_SJ - pred_full_SJ)^2))
+round(RMSE_trn_full_SJ,2)
+
+# Made a prediction model and calculated the RMSE for test set 
+pred_full_SJ <- predict(full_model_SJ, newdata=test_SJ)
+RMSE_test_full_SJ <- sqrt(mean((test_SJ$DL_SJ - pred_full_SJ)^2))
+round(RMSE_test_full_SJ,2)
+
+```
+ - After creating the full model, lets create another model while performing 
+    backward selection.
+```{r}
+#########################################
+## Creating Backward Selection Model   ##
+#########################################
+
+back_model_SJ = step(full_model_SJ, direction="backward", details=TRUE)
+summary(back_model_SJ)
+
+# Made a prediction model and calculated the RMSE for train set 
+pred_back_SJ <- predict(back_model_SJ, newdata=train_SJ)
+RMSE_trn_back_SJ <- sqrt(mean((train_SJ$DL_SJ - pred_back_SJ)^2))
+round(RMSE_trn_back_SJ,2)
+
+# Made a prediction model and calculated the RMSE for train set 
+pred_back_SJ <- predict(back_model_SJ, newdata=test_SJ)
+RMSE_test_back_SJ <- sqrt(mean((test_SJ$DL_SJ - pred_back_SJ)^2))
+round(RMSE_test_back_SJ,2)
+```
+  - We will take one by one all the variable and check the 
+    AIC value, the lower the AIC better the model, so in our case we took 
+    6 variables PG_SJ, ML_SJ, DM_SJ, HZ_SJ, CR_SJ, WT_SJ to get the lowest
+    AIC value of 193.44. 
+  
+  ********************************************************************************
+
+4 Model Evaluation – Verifying Assumptions - Multivariate 
+
+  For both models created in Step 4, evaluate the main assumptions of 
+  regression (for example, Error terms mean of zero, constant variance and 
+  normally distributed, etc.)
+  - We have to check the assumptions for both the models we made above. 
+  The assumptions include :
+  Independence of predictors,
+  Linearity,
+  Distribution of Error Terms,
+  Homoscedasticity of Error Terms,
+  Non-autocorrelation,
+                          
+  Lets plot the graphs to check that the model fulfill the assumptions.
+```{r}
+
+par(mfrow = c(2, 2))  
+plot(full_model_SJ)  
+par(mfrow = c(1, 1))  
+
+```
+- It is observed that the residuals are scattered around the mean and near zero,
+  that is it fits properly, also the QQ plot shows that the distribution is normal
+  as it aligns the center line, I also observed that that is no pattern seen in the 
+  data points , also there is no autocorrelation observed. The variance of the errors 
+  is also constant throughout the model.No High leverage or high influence is observed.
+  The model meets sall the assumptions of regression.
+
+```{r}
+# plotting graphs for backward model
+par(mfrow = c(2, 2))  
+plot(back_model_SJ)  
+par(mfrow = c(1, 1))  
+ 
+```
+ -Similarly, for the backward model we plotted the graphs and observed that it 
+  matches all the assumptions of regression.
+  
+  
+*********************************************************************************
+5. Final Recommendation - Multivariate 1
+
+  Based on your preceding analysis, recommend which of the two models from 
+  step 4 should be used and why.
+
+- Comparing both the models, I can infer that the backward model is better as it 
+  passes the t test for all variables. Unlike full model, the variables VN and 
+  CS fails the t-test.  Comparing the other parameters like Adjusted R^2 , f-test,
+  residuals, and RMSE values,both the models give reasonable results satisfying 
+  the conditions,but backward model overpowers the full model, as it as it passes 
+  the t-test for all variables and give a little bit better Adjusted R^2 value, 
+  also the RMSE's for both train and test set are very similar and near to each other. 
+  
+  ************************************************************************************
