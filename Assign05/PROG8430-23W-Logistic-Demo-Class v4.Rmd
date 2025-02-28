@@ -1,0 +1,198 @@
+---
+title: "PROG8430 - 23W - Logistic Demo"
+author: "David"
+date: "12/01/2022"
+output:
+  pdf_document: default
+  word_document: default
+---
+
+Set the working directory
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.width=7, fig.height=5,
+                      fig.path='Figs/', echo = TRUE)
+#This sets the working directory
+knitr::opts_knit$set(root.dir = 'C:/Users/holys/OneDrive/Desktop/Data Analytics,Mathamatics,Algor')
+
+```
+
+Clear Workspace and set format
+
+```{r, echo=FALSE, results='hide'}    
+if(!is.null(dev.list())) dev.off()
+cat("\014") 
+rm(list=ls())
+options(scipen=9)
+
+```
+Load and attach all the necessary packages.
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
+#Load packages
+#For Excel
+if(!require(tinytex)){install.packages("tinytex")}
+library("tinytex")
+
+if(!require(pastecs)){install.packages("pastecs")}
+library("pastecs")
+
+if(!require(lattice)){install.packages("lattice")}
+library("lattice")
+
+if(!require(vcd)){install.packages("vcd")}
+library("vcd")
+
+if(!require(HSAUR)){install.packages("HSAUR")}
+library("HSAUR")
+
+if(!require(rmarkdown)){install.packages("rmarkdown")}
+library("rmarkdown")
+
+if(!require(ggplot2)){install.packages("ggplot2")}
+library("ggplot2")
+
+if(!require(polycor)){install.packages("polycor")}
+library("polycor")
+
+
+```
+
+
+TRANSFORMATION
+
+```{r}
+
+CO <- read.table("PROG8430-23W-uptake.txt", header = TRUE, sep = ",")
+
+head(CO)
+
+CO <- as.data.frame(unclass(CO), stringsAsFactors = TRUE)
+
+head(CO)
+
+CO$HU <- as.factor(ifelse(CO$uptake >= 27,1,0))
+
+head(CO)
+
+table(CO$HU)
+
+CO <- CO[,-c(4)]
+
+head(CO)
+
+```
+
+DESCRIPTIVE
+
+```{r, results='hide'}
+summary(CO)
+
+
+par(mfrow=c(2,2))    
+
+sapply(names(CO), function(cname){
+   if (is.numeric(CO[[cname]]))
+    print(boxplot(CO[[cname]], main=cname, xlab="",
+                  horizontal=TRUE, pch=10))
+})
+
+par(mfrow=c(1,1))
+
+par(mfrow=c(2,2))
+
+for (i in 1:ncol(CO)) {
+  if (is.factor(CO[,i])) {
+      ct <- table(CO[i])
+      barplot(ct, main=names(CO)[i])
+  }
+  }
+
+par(mfrow=c(1,1))
+
+
+```
+EXPLORATORY
+
+```{r}
+
+pairs(CO, pch=46)
+  
+ht <- hetcor(CO)  #from polycor library
+round(ht$correlations,2)
+
+```
+TRAIN/TEST
+
+```{r}
+sr <- 0.75
+
+n.row <- nrow(CO)
+
+set.seed(8430)
+training.rows <- sample(1:n.row, sr*n.row, replace=FALSE)
+
+train <- subset(CO[training.rows,])
+
+test <- subset(CO[-c(training.rows),])
+```
+
+MODEL
+
+```{r}
+
+glm.fit <- glm(HU ~ ., data=train,
+               family="binomial", na.action=na.omit)
+summary(glm.fit)
+glm.stp <- step(glm.fit)
+summary(glm.stp)
+
+glm.exp <- glm(HU ~ Conc, data=train,
+               family="binomial", na.action=na.omit)
+summary(glm.exp)  
+summary(glm.fit)
+
+```
+
+ASSUMPTIONS
+
+```{r}
+
+plot(glm.fit, which=4, id.n=6)
+
+
+r <- residuals(glm.fit)
+  
+head(r)
+  
+plot(r, pch=20)
+
+```
+
+```{r}
+
+resp_glm <- predict(glm.fit, newdata=train, type="response")   
+Class_glm <- ifelse(resp_glm > 0.5,"1","0")           
+CF_fit_t <- table(train$HU, Class_glm,
+                dnn=list("Actual","Predicted") ) 
+CF_fit_t
+Acc_fit_t <- (CF_fit_t[2,2] + CF_fit_t[1,1])/sum(CF_fit_t)
+round(Acc_fit_t,3)
+
+
+resp_glm <- predict(glm.fit, newdata=test, type="response")   
+Class_glm <- ifelse(resp_glm > 0.5,"1","0")           
+CF_fit_s <- table(test$HU, Class_glm,
+                dnn=list("Actual","Predicted") ) 
+CF_fit_s
+Acc_fit_s <- (CF_fit_s[2,2] + CF_fit_s[1,1])/sum(CF_fit_s)
+round(Acc_fit_s,3)
+
+Pre_t <- CF_fit_t[2,2]/(sum(CF_fit_t[,2]))
+print("")
+print("Training Precision is") 
+round(Pre_t,3)
+
+```
+
+

@@ -1,0 +1,722 @@
+---
+title: "Assign05"
+author: "Shivam"
+date: "2023-04-04"
+output:
+    pdf_document:
+      latex_engine: xelatex
+editor_options: 
+  markdown: 
+    wrap: sentence'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+  
+-Loading the required packages for performing all the tasks.
+```{r, warning=FALSE}
+if(!require(pastecs)){install.packages("pastecs")}
+library("pastecs")
+
+if(!require(lattice)){install.packages("lattice")}
+library("lattice")
+
+if(!require(corrgram)){install.packages("corrgram")}
+library("corrgram")
+
+if(!require(tinytex)){install.packages("tinytex")}
+library("tinytex")
+
+if(!require(vcd)){install.packages("vcd")}
+library("vcd")
+
+if(!require(HSAUR)){install.packages("HSAUR")}
+library("HSAUR")
+
+if(!require(rmarkdown)){install.packages("rmarkdown")}
+library("rmarkdown")
+
+if(!require(ggplot2)){install.packages("ggplot2")}
+library("ggplot2")
+
+if(!require(polycor)){install.packages("polycor")}
+library("polycor")
+
+
+if(!require(klaR)){install.packages("klaR")}
+library("klaR")
+
+if(!require(MASS)){install.packages("MASS")}
+library("MASS")
+
+if(!require(partykit)){install.packages("partykit")}
+library("partykit")
+
+if(!require(nnet)){install.packages("nnet")}
+library("nnet")
+
+
+```
+
+- Clearing the console and the whole workplace,to start with neat and clean workplace .
+```{r}
+
+# Clear plots
+if(!is.null(dev.list())) dev.off()
+
+# Clear console
+cat("\014") 
+
+# Clean workspace
+rm(list=ls())
+
+```
+```{r}
+#Setting the work directory
+setwd("C:/Users/holys/OneDrive/Desktop/Data Analytics,Mathamatics,Algor/Assign05")
+```
+1 Preliminary Data Preparation
+
+```{r}
+dataset_SJ <- read.table("PROG8430_Assign04_23W.txt", header = TRUE, sep = ",")
+
+dataset_SJ[0:15,]     #Printing first 5 data points from the database
+                      #to make sure it looks correct
+
+
+str(dataset_SJ)
+```
+  1. Rename all variables with your initials appended (just as was done in 
+     previous assignments). Remember that any variables you subsequently 
+     create need to have your initials appended.
+```{r}
+colnames(dataset_SJ) <- paste(colnames(dataset_SJ), "SJ", sep = "_")  # renaming all the 
+                                                                # variables and adding
+                                                                # my initials SJ
+  head(dataset_SJ)
+```
+
+```{r}
+# Changed all the character variables to factors as to use them
+#to plot and examine with the help of code given in the announcement
+dataset_SJ <- as.data.frame(unclass(dataset_SJ), stringsAsFactors = TRUE)
+```
+  
+  2. Since this is the same dataset as used in Assignment 4, you do not need 
+     to do the regular descriptive analysis and outlier detection. As in 
+     Assignment 4, remember to delete the observation with PG <0 using 
+     the following code:
+       ClssAssign <- ClssAssign[!ClssAssign$PG < 0,]
+      NOTE – Your variable names will be different of course!
+      
+      -one data point which is negative in the field PG that is packages ,
+       which is impossible to have value of -2, it clearly signifies that 
+       something is fishy going there! 
+       PG refers to the number of packages of product that
+       have been ordered, and that being negative is impossible unless it is a 
+       mistake or wrong interpretation. No product can have number of packages
+       equal to -2. So, its a meaning less data point which should be removed.
+```{r}
+# Removing the outlier
+
+outlier_In_PG_SJ <- which(dataset_SJ$PG_SJ < 0) #Fond row number with PG 
+                                                #less then to 0
+dataset_SJ <- dataset_SJ[-c(outlier_In_PG_SJ),] #deleted the row
+densityplot( ~ dataset_SJ$PG_SJ, pch=6)
+
+```
+  
+  3. Create a new variable in the dataset called OT_[Intials] which will have 
+     a value of 1 if DL ≤ 8.5 and 0 otherwise. If you have forgotten how to 
+     do this, the code to accomplish it is included in the appendix.
+     Remember to also delete the DL variable after this.
+    - Creating new variable field called OT_SJ in the dataset as instructed. OT 
+      will have values 0 or one on the basis of the values of DL; if the DL value
+      is less then equal to 8.5, then it will have OT value as 1 or less it will
+      have 0. 
+      We will also delete the field DL as instructed.
+      
+```{r}
+dataset_SJ$OT_SJ <- as.factor(ifelse(dataset_SJ$DL_SJ <= 8.5, 1,0))
+  head(dataset_SJ)
+  
+dataset_SJ <- dataset_SJ[-c(1)]     #Removing the DL column as instructed 
+                                    #in the task
+
+head(dataset_SJ)
+
+
+```
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2 Exploratory Analysis
+
+  1. Correlations: Create correlations (as demonstrated) and comment on  
+     what you see. Are there co-linear variables?
+
+- Splitting the data set into two parts as learned in the classes, 
+  one train set and t   he other test set. I kept the sampling rate as 0.8,
+  so splitting the data into 80/20 ratio. Also set the seed as 9647 according 
+  to the last four digits of my student number.
+  
+```{r, echo=FALSE}
+# Choose sampling rate
+sr <- 0.8
+
+# Find the number of rows of data
+n.row <- nrow(dataset_SJ)
+
+#Choose the rows for the traning sample 
+
+set.seed(9647)
+training.rows <- sample(1:n.row, sr*n.row, replace=FALSE)
+
+#Assign to the training sample
+
+train_SJ <- subset(dataset_SJ[training.rows,])
+
+# Assign the balance to the Test Sample
+
+test_SJ <- subset(dataset_SJ[-c(training.rows),])
+
+#summary(dataset_SJ)
+#summary(test_SJ)
+#summary(train_SJ)
+
+```
+
+
+To get the coefficient matrix by using the hetcor function
+```{r}
+ht_Cor_SJ <- hetcor(train_SJ)
+round(ht_Cor_SJ$correlations,2)
+
+```
++``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3 Model Development
+  As demonstrated in class, create two logistic regression models.
+  1. A full model using all of the variables.
+  Lets create a full model, using all the variables of the dataset and OT as
+  dependent variable. 
+```{r}
+#########################################
+## Creating Baseline/Full Model        ##
+#########################################
+
+glm.full_SJ <- glm( OT_SJ~ ., data=train_SJ,
+               family="binomial", na.action=na.omit)
+summary(glm.full_SJ)
+
+```
+  2. An additional model using backward selection.
+    - Lets make another model using Backward Selection 
+```{r}
+#########################################
+## Creating Backward Selection Model   ##
+#########################################
+back_model_SJ = step(glm.full_SJ, direction="backward", details=TRUE)
+summary(back_model_SJ)
+
+```
+
+     For each model, interpret and comment on the main measures we 
+     discussed in class:
+  (1) Fisher iterations
+  - By comparing both the models , we can see that there is convergence by seeing
+    number of fisher iterations, both of them have same number of iterations.
+    
+  (2) AIC
+  - For full model, the AIC value is 405.75 and while using back model it is 
+  observed that AIC is equal; to 400.65. As we know lower the value of AIC, 
+  better the model.
+  
+  (3) Residual Deviance
+  - Observing the Residual deviance, we saw that there is no major difference in 
+  comparing both the models, full model has deviance of near about 147.81 and it is 
+  146.91 in the case of backward model. Higher the difference, better the model. 
+  Here, if we see the aspect residual deviance, Full model has a very little more 
+  difference. 
+  
+  (4) Residual symmetry
+  - Observing in both the models, in both the models the residuals are balanced 
+  as the median is near zero and the 1Q and 3Q are symmetrical and median is near 
+  0. 
+  (5) z-values
+  As comparing the p values of Z-test, we saw that all the variable passed the test 
+  in the case of Back model as all the p-values are less then 0.05 , and in 
+  the case of full model, six out of eight passed the test, according to that pack model
+  is better. Three of the variables and not passing the test in the case of full model.
+  
+  (6) Parameter Co-Efficients
+  As comparing the coefficients, with the correlation matrix from the hetcor function,
+  all the coefficients matches as all the coefficients that were obtained negative 
+  value had negative values in the matrix also fro both the models that is back and full. 
+  
+  
+  For both models created we will also check the assumptions, that is, for logistic regression,
+  all the points should be centered around 0 and cooks distance should be in the range.
+  So, for that lest plot graphs for checking both the assumptions, to see its datapoints
+  and the cook's distance.
+
+                          
+  Lets plot the graphs to check that the full model fulfill the assumptions.
+```{r}
+
+plot(glm.full_SJ, which=4, id.n=6)
+full <- residuals(glm.full_SJ)
+plot(full)
+
+
+```
+ - we saw that the datapoints from the full model are centered around zero and
+ the cook's distance is in the range as we saw from the graph above. As any of the
+ cook's distance is not greater then 0.5,Both the assumptions are fulfilled so our
+ model is good. 
+  
+  Checking the assumptions for the backward model
+```{r}
+plot(back_model_SJ, which=4, id.n=6)
+back <- residuals(back_model_SJ)
+plot(back)
+
+```
+ For the back model also both the assumptions are fulfilled as observed from the 
+ graph that all the datapoints are near about zero and cook's distance in the
+ range , that is; As any of the cook's distance is not greater then 0.5,there 
+ is no influence on any particular data point in both the models.
+  
+  3. As demonstrated in class, analyze the output for any 
+     significantly influential datapoints. Are there any?
+     
+     There are no points having high influence in both the models,
+     for both the cases there are no points out of the cook's distance,
+     both the models don't have any datapoints which are highly influencing 
+     the regression line.
+     
+  4. Based on your preceding analysis, recommend which model 
+     should be selected and explain why.
+     
+     According to me, back model is better as both the AICs are very near to each
+     other of both the models , only in the full model, three of the variables 
+     are not passing the z-test as their p values are not less then 0.05 and on
+     the other hand all the variables passes the z-test in Back model, so it is better.
+     
+ 
+--------------------------------------------------------------------------------    
+ PART B
+ *******************************************************************************
+    
+1 Logistic Regression – stepwise
+  1. As above, use the step option in the glm function to fit the model (using 
+     stepwise selection).
+```{r}
+
+start_time_SJ <- Sys.time()
+  
+glm.mod_SJ = glm(OT_SJ ~ .    ,
+              family="binomial", data=train_SJ, na.action=na.omit)
+  
+stp.glm_SJ <- step(glm.mod_SJ, trace=FALSE)
+  
+end_time_SJ <- Sys.time()
+  
+GLM_Time_SJ <- end_time_SJ - start_time_SJ
+  
+summary(stp.glm_SJ)
+  
+
+```
+  2. Summarize the results in Confusion Matrices for both train and test 
+     sets.
+     Lets first create the confusion matrices for both test and train sets
+```{r}
+# Create Confusion Matrix for train
+  
+resp_glm_step_SJ <- predict(stp.glm_SJ, newdata=train_SJ, type="response")   
+Class_glm_step_SJ <- ifelse(resp_glm_step_SJ > 0.5,"Y","N")           
+CF_GLM_step_train_SJ <- table(train_SJ$OT_SJ, Class_glm_step_SJ,
+                dnn=list("Act OT","Predicted") ) 
+CF_GLM_step_train_SJ
+
+
+# Create Confusion Matrix for test
+
+resp_glm_step_test_SJ <- predict(stp.glm_SJ, newdata=test_SJ, type="response")   
+Class_glm_step_test_SJ <- ifelse(resp_glm_step_test_SJ > 0.5,"Y","N")           
+CF_GLM_step_test_SJ <- table(test_SJ$OT_SJ, Class_glm_step_test_SJ,
+                dnn=list("Act OT","Predicted") ) 
+
+CF_GLM_step_test_SJ
+GLM_Time_SJ
+
+```
+```{r}
+#For summarizing confusion matrix of train set
+#As we have summarize both the confusion matrices, lets calculate the accuracy that is (TP+TN/Total)
+Accuracy_glm.mod_SJ <- (CF_GLM_step_train_SJ[2,2] + CF_GLM_step_train_SJ[1,1])/sum(CF_GLM_step_train_SJ)
+paste('Accuracy is :TP+TN/Total =',round(Accuracy_glm.mod_SJ,2))
+
+#Sensitivity= TP/(TP+FN)
+Sensitivity_glm.mod_SJ <- CF_GLM_step_train_SJ[2,2] / (CF_GLM_step_train_SJ[2,2]+ CF_GLM_step_train_SJ[2,1])
+paste('Sensitivity is :TP/(TP+FN) =',round(Sensitivity_glm.mod_SJ,2))
+
+#Specificity= TN/(TN+FP)
+Specificity_glm.mod_SJ <- CF_GLM_step_train_SJ[1,1]/(CF_GLM_step_train_SJ[1,1]+ CF_GLM_step_train_SJ[1,2])
+paste('Specificity is :TN/(TN+FP) =',round(Specificity_glm.mod_SJ,2))
+
+
+#Precision = TP/(TP+FP)
+Precision_glm.mod_SJ <- CF_GLM_step_test_SJ[2,2]/(CF_GLM_step_test_SJ[2,2] + CF_GLM_step_test_SJ[1,2])
+paste('Precision is :TP/(TP+FP) =',round(Precision_glm.mod_SJ,2))
+
+```
+     Calculating the same measures for the test set as well:
+```{r}
+#For summarizing confusion matrix of test set
+#As we have summarize both the confusion matrices, lets calculate the accuracy that is (TP+TN/Total)
+Accuracy_glm.mod_SJ <- (CF_GLM_step_test_SJ[2,2] + CF_GLM_step_test_SJ[1,1])/sum(CF_GLM_step_test_SJ)
+paste('Accuracy is :TP+TN/Total =',round(Accuracy_glm.mod_SJ,2))
+
+#Sensitivity= TP/(TP+FN)
+Sensitivity_glm.mod_SJ <- CF_GLM_step_test_SJ[2,2] / (CF_GLM_step_test_SJ[2,2]+ CF_GLM_step_test_SJ[2,1])
+paste('Sensitivity is :TP/(TP+FN) =',round(Sensitivity_glm.mod_SJ,2))
+
+#Specificity= TN/(TN+FP)
+Specificity_glm.mod_SJ <- CF_GLM_step_test_SJ[1,1]/(CF_GLM_step_test_SJ[1,1]+ CF_GLM_step_test_SJ[1,2])
+paste('Specificity is :TN/(TN+FP) =',round(Specificity_glm.mod_SJ,2))
+
+
+#Precision = TP/(TP+FP)
+Precision_glm.mod_SJ <- CF_GLM_step_test_SJ[2,2]/(CF_GLM_step_test_SJ[2,2] + CF_GLM_step_test_SJ[1,2])
+paste('Precision is :TP/(TP+FP) =',round(Precision_glm.mod_SJ,2))
+
+```
+     As we can observe that as we trained the dataset, we got 0.76 accuracy on
+     the train set,and we got 0.78 as accuracy, that shows that we had a good 
+     model giving better results.We can also observe that all the train dataset
+     have similar precision and sensitivity with the test dataset outcomes. We 
+     can also see that we got 0.81 Specificity on the test set by our model. 
+     
+     
+  3. As demonstrated in class, calculate the time (in seconds) it took to fit 
+     the model and include this in your summary.  
+     As I also calculated above the timings for running both the models,
+```{r}
+GLM_Time_SJ
+```
+  It took about 0.124357 secs to run the step wise model. It takes the longest times
+  of all the models, but it gives highest accuracy, highest precision , good
+  sensitivity and specificity. 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+2 Naïve-Bayes Classification
+
+  1. Use all the variables in the dataset to fit a Naïve-Bayesian classification 
+     model. 
+     
+```{r, warning=FALSE}
+
+start_time <- Sys.time()
+  
+NB.mod_SJ <- NaiveBayes(OT_SJ ~ . ,
+                     data = train_SJ, na.action=na.omit)
+  
+end_time <- Sys.time()
+  
+NB_Time <- end_time - start_time
+NB_Time
+```
+  2. Summarize the results in Confusion Matrices for both train and test 
+     sets.
+```{r, warning=FALSE}
+
+# Create Confusion Matrix for train
+pred_NB <- predict(NB.mod_SJ,newdata=train_SJ)
+CF_NB_train_SJ <- table(Actual=train_SJ$OT_SJ, Predicted=pred_NB$class)
+CF_NB_train_SJ
+
+# Create Confusion Matrix for test
+pred_NB <- predict(NB.mod_SJ,newdata=test_SJ)
+CF_NB_test_SJ <- table(Actual=test_SJ$OT_SJ, Predicted=pred_NB$class)
+CF_NB_test_SJ
+```
+```{r}
+#For summarizing confusion matrix of train set
+#As we have summarize both the confusion matrices, lets calculate the accuracy that is (TP+TN/Total)
+Accuracy_NB.mod_SJ <- (CF_NB_train_SJ[2,2] + CF_NB_train_SJ[1,1])/sum(CF_NB_train_SJ)
+paste('Accuracy is :TP+TN/Total =',round(Accuracy_NB.mod_SJ,2))
+
+#Sensitivity= TP/(TP+FN)
+Sensitivity_NB.mod_SJ <- CF_NB_train_SJ[2,2] / (CF_NB_train_SJ[2,2]+ CF_NB_train_SJ[2,1])
+paste('Sensitivity is :TP/(TP+FN) =',round(Sensitivity_NB.mod_SJ,2))
+
+#Specificity= TN/(TN+FP)
+Specificity_NB.mod_SJ <- CF_NB_train_SJ[1,1]/(CF_GLM_step_train_SJ[1,1]+ CF_NB_train_SJ[1,2])
+paste('Specificity is :TN/(TN+FP) =',round(Specificity_NB.mod_SJ,2))
+
+
+#Precision = TP/(TP+FP)
+Precision_NB.mod_SJ <- CF_NB_train_SJ[2,2]/(CF_NB_train_SJ[2,2] + CF_NB_train_SJ[1,2])
+paste('Precision is :TP/(TP+FP) =',round(Precision_NB.mod_SJ,2))
+```
+```{r}
+#For summarizing confusion matrix of test set
+#As we have summarize both the confusion matrices, lets calculate the accuracy that is (TP+TN/Total)
+Accuracy_NB.mod_SJ <- (CF_NB_test_SJ[2,2] + CF_NB_test_SJ[1,1])/sum(CF_NB_test_SJ)
+paste('Accuracy is :TP+TN/Total =',round(Accuracy_NB.mod_SJ,2))
+
+#Sensitivity= TP/(TP+FN)
+Sensitivity_NB.mod_SJ <- CF_NB_test_SJ[2,2] / (CF_NB_test_SJ[2,2]+ CF_NB_test_SJ[2,1])
+paste('Sensitivity is :TP/(TP+FN) =',round(Sensitivity_NB.mod_SJ,2))
+
+#Specificity= TN/(TN+FP)
+Specificity_NB.mod_SJ <- CF_NB_test_SJ[1,1]/(CF_GLM_step_test_SJ[1,1]+ CF_NB_test_SJ[1,2])
+paste('Specificity is :TN/(TN+FP) =',round(Specificity_NB.mod_SJ,2))
+
+
+#Precision = TP/(TP+FP)
+Precision_NB.mod_SJ <- CF_NB_test_SJ[2,2]/(CF_NB_test_SJ[2,2] + CF_NB_test_SJ[1,2])
+paste('Precision is :TP/(TP+FP) =',round(Precision_NB.mod_SJ,2))
+```
+     
+  3. As demonstrated in class, calculate the time (in seconds) it took to fit 
+     the model and include this in your summary.
+    - It takes the least time , that is; it is the fastest of all models,
+     
+```{r}
+NB_Time
+```
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+3 Recursive Partitioning Analysis
+  1. Use all the variables in the dataset to fit an recursive partitioning
+     classification model. 
+     
+```{r}
+start_time <- Sys.time()
+
+RP.mod_SJ <- ctree(OT_SJ ~ ., data=train_SJ)
+
+end_time <- Sys.time()
+  
+RP_Time <- end_time - start_time
+
+plot(RP.mod_SJ, gp=gpar(fontsize=8))
+
+```
+  2. Summarize the results in Confusion Matrices for both train and test 
+     sets.
+```{r}
+# Create Confusion Matrix for train
+pred.RP <- predict(RP.mod_SJ, newdata=train_SJ)
+CF_RP_train_SJ <- table(Actual=train_SJ$OT_SJ, Predicted=pred.RP)
+CF_RP_train_SJ
+
+# Create Confusion Matrix for test
+pred.RP_test <- predict(RP.mod_SJ, newdata=test_SJ)
+CF_RP_test_SJ <- table(Actual=test_SJ$OT_SJ, Predicted=pred.RP_test)
+CF_RP_train_SJ
+
+```
+```{r}
+#For summarizing confusion matrix of train set
+#As we have summarize both the confusion matrices, lets calculate the accuracy that is (TP+TN/Total)
+Accuracy_RP_mod_SJ <- (CF_RP_train_SJ[2,2] + CF_RP_train_SJ[1,1])/sum(CF_RP_train_SJ)
+paste('Accuracy is :TP+TN/Total =',round(Accuracy_RP_mod_SJ,2))
+
+#Sensitivity= TP/(TP+FN)
+Sensitivity_RP_mod_SJ  <- CF_RP_train_SJ[2,2] / (CF_RP_train_SJ[2,2]+ CF_RP_train_SJ[2,1])
+paste('Sensitivity is :TP/(TP+FN) =',round(Sensitivity_RP_mod_SJ,2))
+
+#Specificity= TN/(TN+FP)
+Specificity_RP_mod_SJ <- CF_RP_train_SJ[1,1]/(CF_RP_train_SJ[1,1]+ CF_RP_train_SJ[1,2])
+paste('Specificity is :TN/(TN+FP) =',round(Specificity_RP_mod_SJ,2))
+
+
+#Precision = TP/(TP+FP)
+Precision_RP_mod_SJ <- CF_RP_train_SJ[2,2]/(CF_RP_train_SJ[2,2] + CF_RP_train_SJ[1,2])
+paste('Precision is :TP/(TP+FP) =',round(Precision_RP_mod_SJ,2))
+
+```
+```{r}
+#For summarizing confusion matrix of test set
+#As we have summarize both the confusion matrices, lets calculate the accuracy that is (TP+TN/Total)
+Accuracy_RP_mod_SJ <- (CF_RP_test_SJ[2,2] + CF_RP_test_SJ[1,1])/sum(CF_RP_test_SJ)
+paste('Accuracy is :TP+TN/Total =',round(Accuracy_RP_mod_SJ,2))
+
+#Sensitivity= TP/(TP+FN)
+Sensitivity_RP_mod_SJ <- CF_RP_test_SJ[2,2] / (CF_RP_test_SJ[2,2]+ CF_RP_test_SJ[2,1])
+paste('Sensitivity is :TP/(TP+FN) =',round(Sensitivity_RP_mod_SJ,2))
+
+#Specificity= TN/(TN+FP)
+Specificity_RP_mod_SJ <- CF_RP_test_SJ[1,1]/(CF_RP_test_SJ[1,1]+ CF_RP_test_SJ[1,2])
+paste('Specificity is :TN/(TN+FP) =',round(Specificity_RP_mod_SJ,2))
+
+
+#Precision = TP/(TP+FP)
+Precision_RP_mod_SJ <- CF_RP_test_SJ[2,2]/(CF_RP_test_SJ[2,2] + CF_RP_test_SJ[1,2])
+paste('Precision is :TP/(TP+FP) =',round(Precision_RP_mod_SJ,2))
+```
+     
+  3. As demonstrated in class, calculate the time (in seconds) it took to fit 
+     the model and include this in your summary.
+```{r}
+RP_Time
+```
+- RP takes about 0.05 seconds that is good enough.
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+############################## 3a BONUS SECTION ################################
+
+This section is bonus marks. There is no need to complete this, but successful
+completion of this section will be worth 3 bonus marks.
+
+Neural Network
+
+  1. Use all the variables in the dataset to fit a Neural Network classification 
+     model. Set the seed to 8430, the size to 3, rang=0.1 and maxit=1200.
+     
+```{r}
+start_time <- Sys.time()
+
+set.seed(8430)
+nn.mod_SJ <- nnet(OT_SJ ~ .,
+          data=train_SJ,
+          size=3,
+          rang=0.1,
+          maxit=1200,
+          trace=FALSE)
+
+end_time <- Sys.time()
+  
+NN_Time <- end_time - start_time
+
+pred.nn <- predict(nn.mod_SJ, newdata=train_SJ, type="class")
+
+NN_Time
+```
+     
+     
+  2. Summarize the results in Confusion Matrices for both train and test 
+     sets.
+```{r}
+# Create Confusion Matrix for train
+pred.nn_train_SJ <- predict(nn.mod_SJ, newdata=train_SJ, type="class")
+CF_NN_train_SJ <- table(Actual=train_SJ$OT_SJ, Predicted=pred.nn_train_SJ)
+CF_NN_train_SJ
+
+# Create Confusion Matrix for test
+pred.nn_test_SJ <- predict(nn.mod_SJ, newdata=test_SJ, type="class")
+CF_NN_test_SJ <- table(Actual=test_SJ$OT_SJ, Predicted=pred.nn_test_SJ)
+CF_NN_test_SJ
+
+```
+```{r}
+#For summarizing confusion matrix of train set
+#As we have summarize both the confusion matrices, lets calculate the accuracy that is (TP+TN/Total)
+Accuracy_NN_mod_SJ <- (CF_NN_train_SJ[2,2] + CF_NN_train_SJ[1,1])/sum(CF_NN_train_SJ)
+paste('Accuracy is :TP+TN/Total =',round(Accuracy_NN_mod_SJ,2))
+
+#Sensitivity= TP/(TP+FN)
+Sensitivity_NN_mod_SJ  <- CF_NN_train_SJ[2,2] / (CF_NN_train_SJ[2,2]+ CF_NN_train_SJ[2,1])
+paste('Sensitivity is :TP/(TP+FN) =',round(Sensitivity_NN_mod_SJ,2))
+
+#Specificity= TN/(TN+FP)
+Specificity_NN_mod_SJ <- CF_NN_train_SJ[1,1]/(CF_NN_train_SJ[1,1]+ CF_NN_train_SJ[1,2])
+paste('Specificity is :TN/(TN+FP) =',round(Specificity_NN_mod_SJ,2))
+
+
+#Precision = TP/(TP+FP)
+Precision_NN_mod_SJ <- CF_NN_train_SJ[2,2]/(CF_NN_train_SJ[2,2] + CF_NN_train_SJ[1,2])
+paste('Precision is :TP/(TP+FP) =',round(Precision_NN_mod_SJ,2))
+```
+```{r}
+#For summarizing confusion matrix of test set
+#As we have summarize both the confusion matrices, lets calculate the accuracy that is (TP+TN/Total)
+Accuracy_NN_mod_SJ <- (CF_NN_test_SJ[2,2] + CF_NN_test_SJ[1,1])/sum(CF_NN_test_SJ)
+paste('Accuracy is :TP+TN/Total =',round(Accuracy_NN_mod_SJ,2))
+
+#Sensitivity= TP/(TP+FN)
+Sensitivity_NN_mod_SJ  <- CF_NN_test_SJ[2,2] / (CF_NN_test_SJ[2,2]+ CF_NN_test_SJ[2,1])
+paste('Sensitivity is :TP/(TP+FN) =',round(Sensitivity_NN_mod_SJ,2))
+
+#Specificity= TN/(TN+FP)
+Specificity_NN_mod_SJ <- CF_NN_test_SJ[1,1]/(CF_NN_test_SJ[1,1]+ CF_NN_test_SJ[1,2])
+paste('Specificity is :TN/(TN+FP) =',round(Specificity_NN_mod_SJ,2))
+
+
+#Precision = TP/(TP+FP)
+Precision_NN_mod_SJ <- CF_NN_test_SJ[2,2]/(CF_NN_test_SJ[2,2] + CF_NN_test_SJ[1,2])
+paste('Precision is :TP/(TP+FP) =',round(Precision_NN_mod_SJ,2))
+```
+     
+     
+  3. As demonstrated in class, calculate the time (in seconds) it took to fit 
+     the model and include this in your summary.
+     
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+################################################################################
+
+4 Compare All Classifiers
+  For all questions below please provide evidence.
+  
+    1. Which classifier is most accurate?
+    
+    -  Going through the accuracies of all the four models, I can observe that
+    the most accurate result is given by the Stepwise Logistic Regression model,
+    as it gives the exact result of 0.76 in test set as that of train set, if we 
+    compare the other models, in naive baye's Model, it chages form 0.76 to
+    0.69, in the case of Recurssive Partitioning,the accuracy duiffers from 0.75
+    in train to 0.69 in test, and for Neural netwrok, it changes from 0.62
+    to 0.60 which is good enough.
+    
+    2. Which classifier seems most consistent (think train and test)?
+    -  Again going trough all ther four aspects, accuracy, sensitivity,specificity
+    and precision, the most consistant is Logistic Regression model (stepwise),
+    which gives the most consistant result, precision is exact same for both test 
+    and train set, the accuracy is also very near, that is 0.78 from 0.76, 
+    sensitivity is consistant with a very little difference of about 7%. Specificity 
+    is having difference of 0.03 which is very less. Hence the most consistant model is
+    LR.
+    
+    3. Which classifier is most suitable when processing speed is most 
+       important?
+       - Going throyugh the time taken for all the models to run , the most time
+       is taken by Stepwise Logistic Regression Model.Neural Network takes significant 
+       time.Naive Baye's and Recurssive Partitioning
+       models almost take similar time, but the fastest of all is Naive-Bayes
+       classifier. 
+       
+    4. Which classifier minimizes false positives?
+    - It can be observed that Neural Network has the least of False Positives
+    that is 8, from the test data it was 35 and in test , it was reduced to 8,
+    which is excellent. 
+    
+    5. In your opinion, classifier is best overall?
+
+    - Going through all the specifics and comparing the four major aspects that 
+       is Accuracy, Sensitivity, Specificity and Precision we can observe that 
+       in the Logistic Regression has Highest Accuracy of 0.78 that is about 78%, 
+       Sensitivity is 0.73, which isalso very near to that iof train set, while 
+       comparing specificity it give a little high value of 0.81 as compared to
+       0.72, which is okay! not that bad! Talking about the precision, it is 
+       exact the dsame value of 0.76m, same as I obtained in train set, that is 
+       the highest Precision out of all models,If we compare the Naive Bayes Model, 
+       the accuracy is reduced by about 7% , sensitivity has a difference 
+      of about 20 % which is very bad. Comparing other two aspects thast is
+      specificityu and precision, also have significant difference. Comparing the
+      Recursive Partitioning model, it gives similar  specificity of 0of about 0.83
+      which is very near to that in trainset. Neural Network gives the worse of 
+      sensitivity as as it was 0.45 on train set and 0.50 which have difference 
+      of about 15% . Comparing all the aspects, I can say that Logistic Regression 
+      gives best results although it takes a little bit more time but gives high 
+      accuracy, high precision and also High sensitivity that is number of true
+      positives,is also better. Therefore I will choose and prefer that 
+      the stepwise Logistic Regression is the best Classifier. 
+      Logistic Regression is the best Classifier as it is most accurate and most
+      precise although it takes a little more time .
+
+################################################################################
+*************************Thank you *********************************************
+
